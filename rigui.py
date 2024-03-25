@@ -10,9 +10,9 @@ class RetrunToMonk(bpy.types.Operator):
         bpy.ops.mesh.primitive_monkey_add()
         return {'FINISHED'}
     
-class ObjectSelectPanel(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_select"
-    bl_label = "Select"
+class MonkePanel(bpy.types.Panel):
+    bl_idname = "R2MPanel"
+    bl_label = "Monke"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "object"
@@ -24,13 +24,13 @@ class ObjectSelectPanel(bpy.types.Panel):
 
     def draw_header(self, context):
         layout = self.layout
-        layout.label(text="My Select Panel")
+        layout.label(text="Return to MONKE")
 
     def draw(self, context):
         layout = self.layout
 
         box = layout.box()
-        box.label(text="Selection Tools")
+        box.label(text="MONKE")
         box.operator("object.select_all").action = 'TOGGLE'
         row = box.row()
         row.operator("object.select_all").action = 'INVERT'
