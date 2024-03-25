@@ -37,6 +37,6 @@ class MonkePanel(bpy.types.Panel):
         row.operator("object.select_random")
 
 
-bpy.utils.register_class(ObjectSelectPanel)
+bpy.utils.register_class(MonkePanel)
 
 bpy.ops.wm.r2m()
