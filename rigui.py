@@ -83,7 +83,6 @@ class Rig_UI_Mia(bpy.types.Panel):
         #LayerManagerEnd
     
 
-###End of Rig_UI_MIA
 classes.append(Rig_UI_Mia)
 
 class Select_Colectionn(bpy.types.Operator):
@@ -151,8 +150,9 @@ class Select_Colectionn(bpy.types.Operator):
         return bones
 
 classes.append(Select_Colectionn)
-       
+#end of select colections operator    
 
+###End of Rig_UI_MIA
 
 
 
