@@ -51,16 +51,22 @@ class Rig_UI_Mia(bpy.types.Panel):
                 button.prop(bone_colctns[name[0]], "is_visible", toggle=True, text=name[0])
                 if size[0] < 1.0:
                     button.scale_x = size[0]
+                __build_picker(name[0],slot)
         def __multi(L:list[str], S:list[float]) -> None:
                 row = col.row(align=True)
                 LS = zip(L,S)
-                for name,size in LS: 
-                    
+                for name,size in LS:                     
                     slot = row.row(align=True)
                     button = slot.row(align=True)
                     button.prop(bone_colctns[name], "is_visible", toggle=True, text=name)
                     if size < 1.0:
                         button.scale_x = size
+                    __build_picker(name,slot)
+        def __build_picker(Name:str,slot):
+            picker = slot.row(align=True)
+            op = picker.operator("select.colection", text="", icon="RESTRICT_SELECT_OFF")
+            op.bcoll_name = Name
+            op.arm_name = context.active_object.name
         __do = {"Single":__single, "Multi":__multi}
         bp = Rig_UI_Mia.Button_Props# ffs 
 
@@ -75,27 +81,77 @@ class Rig_UI_Mia(bpy.types.Panel):
 
 
         #LayerManagerEnd
-        
-
-        #row = col.row(align=True)
-        #slot = row.row(align=True)
-        #button = slot.row(align=True)
-        #button.prop(bone_colctns["Root"], "is_visible", toggle=True, text="Root")
-        #picker = slot.row(align=True)
-        #op = picker.operator("bonemanex.collection_select", text="", icon="RESTRICT_SELECT_OFF")
-        #op.bcoll_name = "Root"
-        #op.arm_name = context.active_object.name
-        #row = layout.row(align=True)
-        #slot = row.row(align=True)
-        #button = slot.row(align=True)
-        
-        
-        #button.prop(bone_colctns["Face Master"], "is_visible", toggle=True, text="Face Master")
+    
 
 ###End of Rig_UI_MIA
 classes.append(Rig_UI_Mia)
 
+class Select_Colectionn(bpy.types.Operator):
+    bl_idname = "select.colection"
+    bl_label = ""
+    bl_description = "Select all Bones in Collection.\nShift to add to selection. \nAlt to remove from selection"
 
+    bcoll_name : bpy.props.StringProperty(name="Collection name", description="Name of bone collection", default="",)
+    arm_name : bpy.props.StringProperty(name="Armature name", description="Name of armature", default="",)
+
+    @classmethod
+    def poll(self, context):
+
+        return context.mode == "POSE"
+
+    def __init__(self):
+        self.shift = False
+        self.alt = False
+
+    def invoke(self, context, event):
+        self.shift = event.shift
+        self.alt = event.alt
+
+        return self.execute(context)
+
+    def execute(self, context):
+        ob = context.active_object
+        arm = ob.data
+        bcoll = arm.collections[self.bcoll_name]
+
+        if self.alt:
+            bones = self.get_bones(arm, bcoll, True)
+            for bone in bones:
+                bone.select = False
+                bone.select_head = False
+                bone.select_tail = False
+
+        else:
+           
+            bones = self.get_bones(arm, bcoll, False)
+            if not self.shift:
+                bpy.ops.pose.select_all(action="DESELECT")
+
+            for bone in bones:
+                bone.select = True
+                bone.select_head = True
+                bone.select_tail = True
+        return {"FINISHED"}
+                    
+    def get_bones(self,arm, collection, selected):
+        if collection:
+            bones = arm.collections[collection.name].bones
+            if selected:
+                try:
+                    bones = [bone for bone in bones if bone.select is True]
+                except TypeError:
+                    return []
+        elif selected and not collection:
+            try:
+                bones = [bone for bone in arm.bones if bone.select is True]
+            except TypeError:
+                return []
+        else:
+            bones = arm.bones
+        return bones
+
+classes.append(Select_Colectionn)
+       
 
 
 
