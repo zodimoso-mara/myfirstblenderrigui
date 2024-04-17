@@ -30,12 +30,15 @@ class Rig_UI_Mia(bpy.types.Panel):
         names:list
         size:float = 1.0
         amount:str = "single"
-        def __init__(self, names:list[str], size:list[float] = None, amount:str = "Single") -> None:
+        def __init__(self, names:list[str], size:list[float] = None, amount:str = "Multi") -> None:
             self.names = names
             self.size = size
             if size == None:
-                self.size = [1.0 for i in names]
+                self.size = [1.0 for i in names]            
+            if len(self.names) == 1:
+                amount = "Single"
             self.amount = amount
+            
 
     def draw(self, context):
         #Layer Manager
@@ -72,7 +75,14 @@ class Rig_UI_Mia(bpy.types.Panel):
 
         order = [
                 bp(["Root"]),
-                bp(["Root","Face Master"],size = [1.0,0.5], amount="Multi")
+                bp(["Face Master","Face Ctrls","Face Tweaks"]),
+                bp(["Spine","Spine Tweaks","Torso Tweak"],size = [1.0,1.0,.5]),
+                bp(["Ik Arm","Arm Tweak","Fk Arm"],size = [1.0,.5,1.0]),
+                bp(["Arm Tweak"]),
+                bp(["FK Finger Master","Fk Finger","Fk Finger Tweak"],size = [1.0,1.0,.5]),
+                bp(["Leg Ik","Leg Tweaks","Leg Fk"],size = [1.0,.5,1.0]),
+                bp(["Weapon"]),
+                bp(["Skirt","BoneDynamcis"],size = [1.0,.25]),
                 ]
 
         for r in order:
@@ -148,17 +158,86 @@ class Select_Colectionn(bpy.types.Operator):
         else:
             bones = arm.bones
         return bones
+    #end of select colections operator
+
 
 classes.append(Select_Colectionn)
-#end of select colections operator    
+
+
+class Mia_Rig_Props(bpy.types.Panel):
+    bl_category = 'Item'
+    bl_label = "Mia Rig Props"
+    bl_idname = "Mia_Rig_Props"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(self, context):
+        if context.active_object.data.get('rig_id'):
+            pose_bones = context.selected_pose_bones
+            props = None
+            rna_properties = {prop.identifier for prop in bpy.types.PoseBone.bl_rna.properties if prop.is_runtime}
+            if context.selected_pose_bones:                      #if pose mode
+                bones = context.selected_pose_bones              # bones? is pose_bones(we already have this tf?)
+
+            elif context.selected_editable_bones:       # else if edit mode                                                         
+                objs = (*[o for o in {context.active_object}],*[o for o in context.selected_objects if (o != context.active_object and o.type == 'ARMATURE')])#if pose mode
+                bones = [b for o in objs for b in getattr(o.pose, "bones", []) if o.data.edit_bones[f'{b.name}'].select]
+
+            else:                                                  #else no show
+                return False
+            
+            
+            if bones:
+                props = [[prop for prop in bone.items() if prop not in rna_properties] for bone in bones]
+
+            if (len(props) != 1 or props[0]) and bones:
+                return (context.active_object.data.get("rig_id") == "MIA")
+            else:
+                return False
+
+        else:
+            return False
+
+    def draw(self, context):
+        layout = self.layout
+        if context.mode == 'POSE':
+            bones = context.selected_pose_bones
+        else:   
+            objs = (*[o for o in {context.active_object}],*[o for o in context.selected_objects if (o != context.active_object and o.type == 'ARMATURE')])
+            if context.mode == "EDIT_ARMATURE":
+                bones = [b for o in objs for b in getattr(o.pose, "bones", []) if o.data.edit_bones[f'{b.name}'].select]
+            else:
+                bones = [b for o in objs for b in getattr(o.pose, 'bones',[]) if b.bone.select]
+            
+
+        for bone in bones:
+            if bone.items():
+                box = layout.box()
+                box.label(text=(bone.name) , icon="BONE_DATA")
+                
+                for key in sorted(bone.keys()):
+                    
+                    row = box.row()
+                    split = row.split(align=True, factor=0.7)
+                    row = split.row(align=True)
+                    row.label(text=key, translate=False)
+                    row = split.row(align=True)
+                    row.prop(bone, f'["{key}"]', text = "", slider=True)
+
+
+
+
+classes.append(Mia_Rig_Props)    
 
 ###End of Rig_UI_MIA
 
 
 
+"""
 
-
-
+"""
 
 
 
