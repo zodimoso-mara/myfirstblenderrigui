@@ -91,8 +91,7 @@ class Rig_UI_Mia(bpy.types.Panel):
 
 
         #LayerManagerEnd
-    
-
+    ###End of Rig_UI_MIA
 classes.append(Rig_UI_Mia)
 
 class Select_Colectionn(bpy.types.Operator):
@@ -159,10 +158,7 @@ class Select_Colectionn(bpy.types.Operator):
             bones = arm.bones
         return bones
     #end of select colections operator
-
-
 classes.append(Select_Colectionn)
-
 
 class Mia_Rig_Props(bpy.types.Panel):
     bl_category = 'Item'
@@ -225,17 +221,76 @@ class Mia_Rig_Props(bpy.types.Panel):
                     row.label(text=key, translate=False)
                     row = split.row(align=True)
                     row.prop(bone, f'["{key}"]', text = "", slider=True)
-
-
-
-
 classes.append(Mia_Rig_Props)    
 
-###End of Rig_UI_MIA
+class Catch_and_Throw(bpy.types.Operator):
+    bl_idname = "catchthrow.switch"
+    bl_label = ""
+    bl_description = "Turns a child of constraint on or off and moves and keys the bone acordingly."
+    """ 
+    First grab the axe bone and the bone the constraint points to(step dad)
+    first and a half get curent keyframe, and the const
+    Second is const on or off rn?
+    if on:
+        on past keyframe hit constrant value and axe pos
+        on this key frame aply visual transform set const to 0 
+        key axe pos and const value
+    if off # ima keep it real i have no fuckin clue how to do this one
+        grab axe global?
+        key frame on past
+        turn on 
+        move axe 
+        key again
+    """
 
+    axe = "Ctrl_Axe_Root_Origin.X"
+    @classmethod
+    def poll(self, context):
+        if bpy.context.selected_pose_bones and bpy.context.selected_pose_bones[0].name == self.axe:
+            return context.mode == "POSE"
+        return False
+        
+
+    def execute(self, context):
+        
+        bone = bpy.context.selected_pose_bones[0]
+        for c in bone.constraints:
+            if c.name == "Throw_Catch":
+                const = c
+        step_dad = const.subtarget #the bone acting as the parent when child of is on
+        frame = bpy.data.scenes[0].frame_current
+
+        bone.insert_keyframe(const.influence, frame = frame -1 )
+
+
+classes.append(Catch_and_Throw)  
+
+class Throw_Catch(bpy.types.Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'Item'
+    bl_label = "Special Props"
+    bl_idname = "Throw_Catch"
+
+    axe = "Ctrl_Axe_Root_Origin.X"
+    @classmethod
+    def poll(self, context):
+        if bpy.context.selected_pose_bones and bpy.context.selected_pose_bones[0].name == self.axe:
+            return context.mode == "POSE"
+    def draw(self,context):
+        layout = self.layout
+        col = layout.column()
+        row = col.row(align=True)
+        slot = row.row(align=True)
+        button = slot.row(align=True)
+        button.operator("catchthrow.switch", text = "Throw/Catch")
+
+
+classes.append(Throw_Catch)
 
 
 """
+
 
 """
 
