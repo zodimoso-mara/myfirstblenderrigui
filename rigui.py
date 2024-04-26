@@ -17,7 +17,7 @@ class Rig_UI_Mia(bpy.types.Panel):
     @classmethod
     def poll(self, context):
         try:
-            return (context.active_object.data.get("rig_id") == "MIA")
+            return (context.active_object.data.get("rig_id") == "MIA") and len(context.selected_objects) != 0
         except (AttributeError, KeyError, TypeError):
             return False
         
