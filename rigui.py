@@ -249,18 +249,62 @@ class Catch_and_Throw(bpy.types.Operator):
         if bpy.context.selected_pose_bones and bpy.context.selected_pose_bones[0].name == self.axe:
             return context.mode == "POSE"
         return False
-        
+    
+    def __get_rotation_mode(self,bone):
+        if bone.rotation_mode in ("QUATERNION", "AXIS_ANGLE"):
+            return bone.rotation_mode.lower()
+        return "euler"   
 
+    
     def execute(self, context):
-        
-        bone = bpy.context.selected_pose_bones[0]
+        obj = context.object
+        ops = bpy.ops
+        #Step 1 make vars: bone, const, step_dad, frame
+        bone = context.selected_pose_bones[0]
         for c in bone.constraints:
             if c.name == "Throw_Catch":
                 const = c
-        step_dad = const.subtarget #the bone acting as the parent when child of is on
+            #else throw "add const throw_catch" if const is none???
+        
+        step_dad_name = const.subtarget #the bone acting as the parent when child of is on
+        step_dad = obj.pose.bones[step_dad_name]
+        
         frame = bpy.data.scenes[0].frame_current
+        rotation_mode = self.__get_rotation_mode(bone)
+        
+        def __keyframe(f:int):
+            bone.keyframe_insert('location', frame = f)
+            bone.keyframe_insert(f'rotation_{rotation_mode}', frame = f)
+            bone.keyframe_insert('scale', frame = f)
+            const.keyframe_insert('influence', frame = f)
+            
+        def __off():      
+            #Step 2a Key last frame
+            __keyframe(frame-1) 
+            
+            #Step 3a apply visual transform turn off const new keyframe
+            matrix = bone.matrix
+            const.influence = 0.0
+            bone.matrix = matrix
+            __keyframe(frame)
+    
+        #Step 2b Key Last
+        def __on():
+            __keyframe(frame-1)
+            const.influence = 1.0
+            ops.pose.loc_clear()
+            ops.pose.rot_clear()
+            __keyframe(frame)
+            
+        toggle = {1.0:__off, 0.0:__on}
 
-        bone.insert_keyframe(const.influence, frame = frame -1 )
+        
+        print(const.influence)
+        toggle[const.influence]()
+        
+        
+        
+        return {"FINISHED"}
 
 
 classes.append(Catch_and_Throw)  
@@ -289,8 +333,41 @@ class Throw_Catch(bpy.types.Panel):
 classes.append(Throw_Catch)
 
 
-"""
-
+"""     Test code run so far. Not working as intended
+        #step 3b Keep transforms but turn const on
+        
+        #wrld = bone.id_data.matrix_wrld
+        #matrix = bone.matrix
+        # print(wrld)
+        # print(matrix)
+        # print(bone.matrix_basis)
+        
+        # global_matrix = obj.convert_space(pose_bone = bone, matrix=matrix, from_space='POSE', to_space='WORLD')
+        # print(global_matrix)
+        
+        # global_matrix = obj.convert_space(pose_bone = step_dad, matrix=matrix, from_space='POSE', to_space='WORLD')
+        # print(global_matrix)
+        
+        const.influence = 1
+        
+        #bpy.ops.object.mode_set(mode='OBJECT')
+        #bpy.ops.object.empty_add()
+        #context.object.matrix_world = global_matrix
+        #make empty move to global look at it 
+        
+        # bone = context.selected_pose_bones[0]
+        # pose_matrix = obj.convert_space(pose_bone = bone, matrix=global_matrix, from_space='WORLD', to_space='POSE')
+        # print(pose_matrix)
+        
+        # bone.matrix = pose_matrix
+        
+        
+        
+        # global_matrix = obj.convert_space(pose_bone = step_dad, matrix=bone.matrix, from_space='POSE', to_space='WORLD')
+        # print(global_matrix)
+        
+        #print(obj.convert_space(pose_bone = bone, matrix=bone.matrix, from_space='POSE', to_space='WORLD'))
+        #bpy.ops.constraint.childof_set_inverse(constraint="Throw_Catch", owner='bone')
 
 """
 
